@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <title>Bash Xterm Colors</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="js/colors.js"></script>
+    <script src="js/color-chart.js"></script>
+    <script src="js/layouts.js"></script>
+    <script src="js/render.js"></script>
+  </head>
+  <body>
+    <h1>Bash Xterm Colors</h1>
+    <div id="basic-layout" class="layout"></div>
+    <div id="color-chart" class="chart"></div>
+    <script>
+      render("#basic-layout", renderLayout("basic"));
+      render("#color-chart", renderColorChart());
+    </script>
+  </body>
+</html>

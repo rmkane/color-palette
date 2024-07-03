@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        --border-color: #000000;
+        --border-style: solid;
+        --border-width: 2px;
+      }
+      .matrix {
+        display: flex;
+        flex-direction: column;
+      }
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+      .cell {
+        display: flex;
+        width: 32px;
+        aspect-ratio: 1;
+      }
+      .cell:hover {
+        cursor: pointer;
+      }
+      .highlighted-border-top {
+        border-top: var(--border-width) var(--border-style) var(--border-color);
+      }
+      .highlighted-border-bottom {
+        border-bottom: var(--border-width) var(--border-style) var(--border-color);
+      }
+      .highlighted-border-left {
+        border-left: var(--border-width) var(--border-style) var(--border-color);
+      }
+      .highlighted-border-right {
+        border-right: var(--border-width) var(--border-style) var(--border-color);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="root"></div>
+    <script>
+      const colors = [
+        "#000000", // black
+        "#800000", // maroon
+        "#008000", // green
+        "#808000", // olive
+        "#000080", // navy
+        "#800080", // purple
+        "#008080", // teal
+        "#c0c0c0", // silver
+        "#808080", // grey
+        "#ff0000", // red
+        "#00ff00", // lime
+        "#ffff00", // yellow
+        "#0000ff", // blue
+        "#ff00ff", // fuchsia
+        "#00ffff", // aqua
+        "#ffffff", // white
+      ];
+
+      const dataMatrix = [
+        [9, 9, 9, 9, 9, 14, 14, 14, 14, 14],
+        [9, 11, 9, 9, 9, 14, 14, 14, 14, 14],
+        [9, 11, 11, 11, 9, 14, 13, 13, 13, 14],
+        [9, 11, 9, 11, 9, 14, 13, 13, 13, 14],
+        [9, 9, 9, 11, 9, 14, 13, 13, 13, 14],
+        [9, 9, 9, 11, 9, 14, 13, 13, 13, 14],
+        [11, 11, 11, 11, 9, 14, 13, 13, 13, 14],
+        [9, 9, 9, 11, 9, 14, 14, 14, 14, 14],
+        [9, 9, 9, 9, 9, 14, 14, 14, 14, 14],
+        [9, 9, 9, 9, 9, 14, 14, 14, 14, 14],
+      ];
+
+      const directions = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ];
+
+      let cachedRegion = null;
+      let cachedColor = null;
+
+      const init = () => {
+        renderMatrix(".root", dataMatrix);
+        document.addEventListener("mouseover", handleMouseOver);
+        document.addEventListener("mouseout", handleMouseOut);
+      };
+
+      const renderMatrix = (selector, matrix) => {
+        const content = matrix.map(renderRow).join("");
+        document.querySelector(selector).innerHTML = content;
+      };
+
+      const renderRow = (row, rowIndex) => `
+        <div class="row">
+          ${row
+            .map((cell, colIndex) => renderCell(cell, rowIndex, colIndex))
+            .join("")}
+        </div>`;
+
+      const renderCell = (cell, rowIndex, colIndex) => `
+        <div
+          class="cell"
+          style="background:${colors[cell]}"
+          data-row="${rowIndex}"
+          data-col="${colIndex}"></div>
+      `;
+
+      const isInBounds = (row, col) =>
+        row >= 0 &&
+        col >= 0 &&
+        row < dataMatrix.length &&
+        col < dataMatrix[0].length;
+
+      const numToHexStr = (n, size = 2) =>
+        Math.floor(n).toString(16).padStart(size, "0");
+
+      const chunkString = (str, size) =>
+        Array.from({ length: Math.ceil(str.length / size) }).map((_, i) =>
+          str.slice(i * size, i * size + size)
+        );
+
+      const darkenColor = (hex, percent) => {
+        return `#${chunkString(hex.replace(/^#/, ""), 2)
+          .map((b) => numToHexStr(parseInt(b, 16) * (1 - percent)))
+          .join("")}`;
+      };
+
+      const findAdjacentCells = (
+        row,
+        col,
+        targetColor,
+        visited = new Set()
+      ) => {
+        const key = `${row},${col}`;
+        if (
+          visited.has(key) ||
+          !isInBounds(row, col) ||
+          dataMatrix[row][col] !== targetColor
+        )
+          return [];
+        visited.add(key);
+        return [
+          { row, col },
+          ...directions.flatMap(([rowOffset, colOffset]) =>
+            findAdjacentCells(
+              row + rowOffset,
+              col + colOffset,
+              targetColor,
+              visited
+            )
+          ),
+        ];
+      };
+
+      const isBorderCell = (row, col, region) => {
+        return directions.some(([rowOffset, colOffset]) => {
+          const newRow = row + rowOffset;
+          const newCol = col + colOffset;
+          return !region.some(
+            (cell) => cell.row === newRow && cell.col === newCol
+          );
+        });
+      };
+
+      const highlightRegion = (cell) => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const targetColor = dataMatrix[row][col];
+
+        if (cachedRegion && cachedColor === targetColor) return;
+
+        //const invertedColor = invertColor(colors[targetColor]);
+        const darkenedColor = darkenColor(colors[targetColor], 0.25);
+
+        document.body.style.setProperty("--border-color", darkenedColor);
+
+        clearHighlights();
+        const region = findAdjacentCells(row, col, targetColor);
+        highlightCells(region, darkenedColor);
+        cachedRegion = region;
+        cachedColor = targetColor;
+      };
+
+      const getCell = ({ row, col }) =>
+        isInBounds(row, col) &&
+        document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+
+      const highlightCells = (cells, darkenedColor) => {
+        cells.forEach(({ row, col }) => {
+          const cell = getCell({ row, col });
+          if (!cell) return;
+          cell.classList.add("highlighted");
+
+          if (isBorderCell(row, col, cells)) {
+            directions.forEach(([rowOffset, colOffset], index) => {
+              const borderClass = [
+                "highlighted-border-top",
+                "highlighted-border-bottom",
+                "highlighted-border-left",
+                "highlighted-border-right",
+              ][index];
+              if (
+                !cells.some(
+                  (c) => c.row === row + rowOffset && c.col === col + colOffset
+                )
+              ) {
+                cell.classList.add(borderClass);
+                cell.setAttribute("data-border-color", darkenedColor);
+              }
+            });
+          }
+        });
+      };
+
+      const clearHighlights = () => {
+        document.querySelectorAll(".highlighted").forEach((cell) => {
+          cell.classList.remove(
+            "highlighted",
+            "highlighted-border-top",
+            "highlighted-border-bottom",
+            "highlighted-border-left",
+            "highlighted-border-right"
+          );
+          cell.removeAttribute("data-border-color");
+        });
+        cachedRegion = null;
+        cachedColor = null;
+      };
+
+      const handleMouseOver = (event) => {
+        const cell = event.target.closest(".cell");
+        if (!cell || cell.classList.contains("highlighted")) return;
+        highlightRegion(cell);
+      };
+
+      const handleMouseOut = (event) => {
+        const cell = event.target.closest(".cell");
+        if (!cell) return;
+        clearHighlights();
+      };
+
+      init();
+    </script>
+  </body>
+</html>

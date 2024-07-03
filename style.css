@@ -1,0 +1,97 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #222;
+    color: #eee;
+    gap: 1rem;
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.section {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    aspect-ratio: 1;
+}
+
+.cell:hover {
+    border: thin solid black;
+    cursor: pointer;
+}
+
+.anchor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 100%;
+    background: #333;
+    border: thin solid #555;
+    font-family: monospace;
+    font-size: smaller;
+}
+
+.row .anchor:first-child {
+    margin-right: 0.25rem;
+}
+
+.row .anchor:last-child {
+    margin-left: 0.25rem;
+}
+
+.color-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.color-chart-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.color-chart-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.color-chart-cell {
+    width: 8px;
+    aspect-ratio: 1;
+}
+
+.color-chart-cell:hover {
+    border: thin solid black;
+    cursor: pointer;
+}
